@@ -12,6 +12,7 @@ import java.util.ResourceBundle;
 import it.polito.tdp.yelp.model.Business;
 import it.polito.tdp.yelp.model.Model;
 import it.polito.tdp.yelp.model.Review;
+import it.polito.tdp.yelp.model.ReviewWithEdges;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -48,19 +49,44 @@ public class FXMLController {
     	this.cmbLocale.getItems().clear();
     	String citta = this.cmbCitta.getValue();
     	if(citta != null) {
-    		//TODO popolare la tendina dei locali per la città selezionata
-    		
+    		this.cmbLocale.getItems().addAll(this.model.getBusinessCity(citta));	
+    	} else {
+    		txtResult.setText("Per favore, seleziona una citta' dal menu' a tendina\n");
+    		return;
     	}
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
-    	
+    	txtResult.clear();
+    	String citta = this.cmbCitta.getValue();
+    	Business locale = this.cmbLocale.getValue();
+    	if(citta == null) {
+    		txtResult.setText("Seleziona una citta' (c) dal menu' a tendina prima di creare il grafo");
+    		return;
+    	} else {	// la città è stata selezionata dall'utente
+	    	if(locale != null) {
+	    		String msg = this.model.creaGrafo(locale);
+	    		txtResult.appendText(msg + "\n\n");
+	    		
+	    		List<ReviewWithEdges> result = this.model.maxArchiUscenti();
+	    		for(ReviewWithEdges rwe: result)
+	    			txtResult.appendText(rwe.getReview().getReviewId() + "\t\t# ARCHI USCENTI: " + rwe.getOutgoingEdges() + "\n");
+	    	} else {
+	    		txtResult.setText("Per favore, seleziona un locale dal menu' a tendina\n");
+	    		return;
+	    	}
+    	}
     }
 
     @FXML
     void doTrovaMiglioramento(ActionEvent event) {
-    	
+    	txtResult.clear();
+    	List<Review> result = this.model.getPercorsoMigliore();
+    	txtResult.appendText("Sequenza di recensioni piu' lunga di dimensione uguale a: " + result.size() + "\n");
+    	for(Review r: result)
+    		txtResult.appendText("\n" + r.getReviewId());
+    	txtResult.appendText("\n\n# GIORNI TRA PRIMA E ULTIMA REVIEW: " + this.model.getGiorniPrimaUltima(result));
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -75,5 +101,7 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	
+    	this.cmbCitta.getItems().addAll(this.model.getAllCities());
     }
 }
